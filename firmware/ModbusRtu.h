@@ -59,7 +59,7 @@
 #endif
 
 
-#define LOGGING
+// #define LOGGING
 
 /**
  * @struct modbus_t
