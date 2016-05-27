@@ -4,6 +4,8 @@
 #include "Serial2/Serial2.h"
 #include "application.h"
 
+#define LOGGING // to see what is happening
+
 /* _____PUBLIC FUNCTIONS_____________________________________________________ */
 
 /**
@@ -40,6 +42,23 @@ Modbus::Modbus(uint8_t u8id, uint8_t u8serno) {
  * @param u8txenpin pin for txen RS-485 (=0 means USB/RS232C mode)
  * @ingroup setup
  * @overload Modbus::Modbus(uint8_t u8id, uint8_t u8serno, uint8_t u8txenpin)
+ * @overload Modbus::Modbus()
+ */
+Modbus::Modbus(uint8_t u8id, uint8_t u8serno, uint8_t u8txenpin) {
+  init(u8id, u8serno, u8txenpin, 0);
+}
+
+/**
+ * @brief
+ * Full constructor for a Master/Slave through USB/RS232C/RS485
+ * It needs a pin for flow control only for RS485 mode
+ *
+ * @param u8id   node address 0=master, 1..247=slave
+ * @param u8serno  serial port used 0..3
+ * @param u8txenpin pin for txen RS-485 (=0 means USB/RS232C mode)
+ * @param u8rxenpin pin for rxen RS-485 (=0 means USB/RS232C mode)
+ * @ingroup setup
+ * @overload Modbus::Modbus(uint8_t u8id, uint8_t u8serno, uint8_t u8txenpin, uint8_t u8rxenpin)
  * @overload Modbus::Modbus()
  */
 Modbus::Modbus(uint8_t u8id, uint8_t u8serno, uint8_t u8txenpin, uint8_t u8rxenpin) {
@@ -248,8 +267,8 @@ int8_t Modbus::query( modbus_t telegram ) {
 
   if ((telegram.u8id==0) || (telegram.u8id>247)) {
     #ifdef LOGGING
-      Serial.print("MODBUS> Query Error: Address out of range");
-      Serial.println();
+      Serial.print("MODBUS> Query Error: Address out of range: ");
+      Serial.println(telegram.u8id);
     #endif
     return -3;
   }
@@ -634,7 +653,6 @@ void Modbus::sendTxBuffer() {
   u8BufferSize++;
 
   // set RS485 transceiver to transmit mode
-
   #ifdef LOGGING
     Serial.print("MODBUS> sendTxBuffer -- ");
     for (uint8_t i = 0; i < u8BufferSize; i++) {
@@ -645,21 +663,6 @@ void Modbus::sendTxBuffer() {
   #endif
 
   if (u8txenpin > 1 && u8rxenpin > 1) {
-/*    switch( u8serno ) {
-    case 1:
-      UCSR1A=UCSR1A |(1 << TXC1);
-      break;
-
-    case 2:
-      UCSR2A=UCSR2A |(1 << TXC2);
-      break;
-
-    case 0:
-    default:
-      UCSR0A=UCSR0A |(1 << TXC0);
-      break;
-    }
-*/
     #ifdef LOGGING
       Serial.print("MODBUS> tx buffer set to transmit");
       Serial.println();
@@ -673,27 +676,7 @@ void Modbus::sendTxBuffer() {
   // keep RS485 transceiver in transmit mode as long as sending
   port->flush();	//waits for transmittion to complete before returning
 
-  // #ifdef LOGGING
-  //   Serial.print("MODBUS> tx buffer write to serial line then flush");
-  //   Serial.println();
-  // #endif
-
   if (u8txenpin > 1 && u8rxenpin > 1) {
-/*    switch( u8serno ) {
-    case 1:
-      while (!(UCSR1A & (1 << TXC1)));
-      break;
-
-    case 2:
-      while (!(UCSR2A & (1 << TXC2)));
-      break;
-
-    case 0:
-    default:
-      while (!(UCSR0A & (1 << TXC0)));
-      break;
-    }
-*/
 
     // return RS485 transceiver to receive mode
     rxTxMode(RXEN);
@@ -1165,15 +1148,15 @@ int8_t Modbus::process_FC16( uint16_t *regs, uint8_t u8size ) {
 // this switches between RXEN (0) and TXEN (1) modes
 void Modbus::rxTxMode( uint8_t mode ) {
   if (mode == RXEN) {
-    digitalWrite( u8txenpin, LOW );
-    digitalWrite( u8rxenpin, LOW );
+    if (u8txenpin > 1) digitalWrite( u8txenpin, LOW );
+    if (u8txenpin > 1) digitalWrite( u8rxenpin, LOW );
     #ifdef LOGGING
       Serial.print("MODBUS> Changing to RX mode.");
       Serial.println();
     #endif
   } else {
-    digitalWrite( u8txenpin, HIGH );
-    digitalWrite( u8rxenpin, HIGH ); // always leave this pin low so its always receiving
+    if (u8txenpin > 1) digitalWrite( u8txenpin, HIGH );
+    if (u8txenpin > 1) digitalWrite( u8rxenpin, HIGH ); // always leave this pin low so its always receiving
     #ifdef LOGGING
       Serial.print("MODBUS> Changing to TX mode.");
       Serial.println();

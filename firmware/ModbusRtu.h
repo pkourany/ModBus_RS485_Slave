@@ -58,9 +58,6 @@
  #error "*** You are building with the Photon as a target ***"
 #endif
 
-
-// #define LOGGING
-
 /**
  * @struct modbus_t
  * @brief
@@ -207,6 +204,7 @@ private:
 public:
   Modbus();
   Modbus(uint8_t u8id, uint8_t u8serno);
+  Modbus(uint8_t u8id, uint8_t u8serno, uint8_t u8txenpin);
   Modbus(uint8_t u8id, uint8_t u8serno, uint8_t u8txenpin, uint8_t u8rxenpin);
   void begin(long u32speed);
   void begin();
