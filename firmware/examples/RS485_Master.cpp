@@ -37,7 +37,10 @@ uint8_t u8query; //!< pointer to message query
  */
 #define TXEN_PIN A3
 #define RXEN_PIN A2
-Modbus master(0, 1, TXEN_PIN, RXEN_PIN); // this is master and RS-232 or USB-FTDI
+// Modbus master();                            // initiaization of master on serial 0
+// Modbus master(0, 1);                        // initiaization using no TXEN or RXEN control
+// Modbus master(0, 1, TXEN_PIN);              // initiaization using only TXEN control
+Modbus master(0, 1, TXEN_PIN, RXEN_PIN);    // initiaization using independent RXEN and TXEN control
 
 /**
  * This is a struct which contains a query to a slave device
